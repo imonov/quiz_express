@@ -3,7 +3,7 @@
 <hr>
 <p align="center">
   <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=js,express,nodejs,vscode,git,linux" />
+    <img src="https://skillicons.dev/icons?i=js,express,nodejs,vscode,postman,git,linux" />
   </a>
 </p>
 <p align="center">yordamida yaratilgan...</p>
