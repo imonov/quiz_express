@@ -3,22 +3,31 @@
 import express from "express";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const app = express();
+const PORT = 3000;
 
 app.use(express.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const filePath = path.join(__dirname, "data", "quiz.json");
 
 function readData() {
-    return JSON.parse(readFileSync(filePath, "utf-8"));
+    try {
+        return JSON.parse(readFileSync(filePath, "utf-8"));
+    } catch {
+        return [];
+    }
 }
 
 function writeData(data) {
-    return writeFileSync(filePath, JSON.stringify(data, null, 4));
+    writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-function getNextId(data) {
+function getNextId(arr) {
     return arr.length === 0 ? 1 : arr.at(-1).id + 1;
 }
 
@@ -31,23 +40,20 @@ app.get("/quiz/:id", (req, res) => {
     const id = Number(req.params.id);
     const data = readData();
 
-    const quiz = data.find((e) => e.id == id);
+    const quiz = data.find((q) => q.id === id);
 
     if (!quiz) {
-        res.status(404).json({ message: "quiz not found" });
-        return;
+        return res.status(404).json({ message: "quiz not found" });
     }
 
-    res.status(200).json(quiz);
-    return;
+    res.json(quiz);
 });
 
 app.post("/quiz", (req, res) => {
     const { title, imagePath } = req.body;
 
     if (!title) {
-        res.status(400).json({ message: "title required" });
-        return;
+        return res.status(400).json({ message: "title required" });
     }
 
     const data = readData();
@@ -61,7 +67,8 @@ app.post("/quiz", (req, res) => {
 
     data.push(newQuiz);
     writeData(data);
-    res.status(201).json({ message: "quiz created", quiz: newQuiz });
+
+    res.status(201).json(newQuiz);
 });
 
 app.put("/quiz/:id", (req, res) => {
@@ -69,11 +76,10 @@ app.put("/quiz/:id", (req, res) => {
     const { title, imagePath } = req.body;
 
     const data = readData();
-    const index = data.find((e) => e.id == id);
+    const index = data.findIndex((q) => q.id === id);
 
     if (index === -1) {
-        res.status(404).json({ message: "quiz not found" });
-        return;
+        return res.status(404).json({ message: "quiz not found" });
     }
 
     data[index].title = title ?? data[index].title;
@@ -81,40 +87,98 @@ app.put("/quiz/:id", (req, res) => {
 
     writeData(data);
 
-    res.status(200).json({ message: "succefully updated", quiz: data[index] });
+    res.json(data[index]);
 });
 
 app.delete("/quiz/:id", (req, res) => {
     const id = Number(req.params.id);
     const data = readData();
 
-    const filteredData = data.filter((e) => e.id !== id);
-    writeData(filteredData);
-    res.status(200).json({ message: `${id} deleted` });
+    const filtered = data.filter((q) => q.id !== id);
+
+    writeData(filtered);
+
+    res.json({ message: "quiz deleted" });
 });
 
 app.post("/quiz/:id/answer", (req, res) => {
-    const qId = Number(req.params.id);
+    const quizId = Number(req.params.id);
     const { answer_title, is_correct } = req.body;
 
     const data = readData();
-    const quiz = data.find((e) => e.id === qId);
+    const quiz = data.find((q) => q.id === quizId);
 
     if (!quiz) {
-        res.status(404).json({ message: "quiz not found" });
-        return;
+        return res.status(404).json({ message: "quiz not found" });
     }
 
     const nextAnswerId =
         quiz.answers.length === 0 ? 1 : quiz.answers.at(-1).answer_id + 1;
 
-    const newAsnwer = {
-        answer_id: nextAnswerId(),
+    if (is_correct) {
+        quiz.answers.forEach((a) => (a.is_correct = false));
+    }
+
+    const newAnswer = {
+        answer_id: nextAnswerId,
         answer_title,
         is_correct: Boolean(is_correct),
     };
 
-    quiz.answers.push(newAsnwer);
+    quiz.answers.push(newAnswer);
     writeData(data);
-    res.status(201).json({ message: "answer created", answer: newAsnwer });
+
+    res.status(201).json(newAnswer);
+});
+
+app.put("/quiz/:id/answer/:answerId", (req, res) => {
+    const quizId = Number(req.params.id);
+    const answerId = Number(req.params.answerId);
+
+    const data = readData();
+    const quiz = data.find((q) => q.id === quizId);
+
+    if (!quiz) {
+        return res.status(404).json({ message: "quiz not found" });
+    }
+
+    const answer = quiz.answers.find((a) => a.answer_id === answerId);
+
+    if (!answer) {
+        return res.status(404).json({ message: "answer not found" });
+    }
+
+    if (req.body.is_correct) {
+        quiz.answers.forEach((a) => (a.is_correct = false));
+    }
+
+    answer.answer_title = req.body.answer_title ?? answer.answer_title;
+
+    answer.is_correct = req.body.is_correct ?? answer.is_correct;
+
+    writeData(data);
+
+    res.json(answer);
+});
+
+app.delete("/quiz/:id/answer/:answerId", (req, res) => {
+    const quizId = Number(req.params.id);
+    const answerId = Number(req.params.answerId);
+
+    const data = readData();
+    const quiz = data.find((q) => q.id === quizId);
+
+    if (!quiz) {
+        return res.status(404).json({ message: "quiz not found" });
+    }
+
+    quiz.answers = quiz.answers.filter((a) => a.answer_id !== answerId);
+
+    writeData(data);
+
+    res.json({ message: "answer deleted" });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server ${PORT} portda ishlayapdi`);
 });
