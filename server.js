@@ -46,7 +46,7 @@ app.get("/quiz/:id", (req, res) => {
         return res.status(404).json({ message: "quiz not found" });
     }
 
-    res.json(quiz);
+    res.status(200).json(quiz);
 });
 
 app.post("/quiz", (req, res) => {

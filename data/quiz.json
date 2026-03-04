@@ -20,5 +20,27 @@
         "is_correct": false
       }
     ]
+  },
+  {
+    "id": 2,
+    "title": "ikkinchi savol",
+    "imagePath": "https://static.vecteezy.com/system/resources/previews/018/765/759/non_2x/quiz-guess-social-media-icon-in-flat-style-faq-illustration-on-isolated-background-help-button-sign-business-concept-vector.jpg",
+    "answers": [
+      {
+        "answer_id": 1,
+        "answer_title": "bu 1-variant",
+        "is_correct": false
+      },
+      {
+        "answer_id": 2,
+        "answer_title": "bu 2-variant",
+        "is_correct": false
+      },
+      {
+        "answer_id": 3,
+        "answer_title": "bu 10-variant",
+        "is_correct": true
+      }
+    ]
   }
 ]
